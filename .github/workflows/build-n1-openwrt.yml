@@ -7,6 +7,10 @@ on:
         description: "ImmortalWrt branch or tag"
         required: true
         default: "v24.10.6"
+      openwrt_packages_ref:
+        description: "OpenWrt packages branch for motion, if needed"
+        required: true
+        default: "openwrt-24.10"
       package_n1_image:
         description: "Also package a Phicomm N1 .img"
         required: false
@@ -37,6 +41,15 @@ jobs:
           path: openwrt
           fetch-depth: 1
 
+      - name: Check out OpenWrt packages
+        uses: actions/checkout@v4
+        with:
+          repository: openwrt/packages
+          ref: ${{ inputs.openwrt_packages_ref }}
+          path: openwrt-packages
+          sparse-checkout: multimedia/motion
+          fetch-depth: 1
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -57,6 +70,13 @@ jobs:
         run: |
           cd openwrt
           ./scripts/feeds update -a
+          if [ ! -d feeds/packages/multimedia/motion ]; then
+            echo "motion recipe is unavailable in the selected feed; using openwrt/packages ${{ inputs.openwrt_packages_ref }}"
+            mkdir -p package
+            cp -a ../openwrt-packages/multimedia/motion package/motion
+          else
+            echo "motion recipe is available in the selected feed"
+          fi
           ./scripts/feeds install -a
 
       - name: Apply custom files
@@ -80,6 +100,7 @@ jobs:
             '^CONFIG_PACKAGE_usbutils=y'
             '^CONFIG_PACKAGE_v4l-utils=y'
             '^CONFIG_PACKAGE_mjpg-streamer=y'
+            '^CONFIG_PACKAGE_motion=y'
           )
           for required_config in "${required_configs[@]}"; do
             if ! grep -q "${required_config}" .config; then
