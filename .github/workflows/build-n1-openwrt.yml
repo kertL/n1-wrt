@@ -1,0 +1,127 @@
+name: Build N1 OpenWrt
+
+on:
+  workflow_dispatch:
+    inputs:
+      immortalwrt_ref:
+        description: "ImmortalWrt branch or tag"
+        required: true
+        default: "v24.10.6"
+      package_n1_image:
+        description: "Also package a Phicomm N1 .img"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-n1-openwrt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build armsr/armv8 rootfs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - name: Check out configuration
+        uses: actions/checkout@v4
+
+      - name: Check out ImmortalWrt source
+        uses: actions/checkout@v4
+        with:
+          repository: immortalwrt/immortalwrt
+          ref: ${{ inputs.immortalwrt_ref }}
+          path: openwrt
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang flex bison g++ gcc-multilib g++-multilib \
+            gettext libncurses-dev libssl-dev zlib1g-dev libelf-dev libdw-dev \
+            libevent-dev libsqlite3-dev libxml-parser-perl \
+            python3 python3-setuptools rsync unzip wget curl git gawk file \
+            subversion mercurial
+
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+          sudo apt-get clean
+          df -h /
+
+      - name: Install OpenWrt feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Apply custom files
+        run: |
+          cp configs/n1.config openwrt/.config
+          mkdir -p openwrt/files
+          cp -a files/. openwrt/files/
+
+      - name: Expand and verify configuration
+        run: |
+          cd openwrt
+          make defconfig
+          grep -q '^CONFIG_TARGET_armsr=y' .config
+          grep -q '^CONFIG_TARGET_armsr_armv8=y' .config
+          grep -q '^CONFIG_TARGET_ROOTFS_TARGZ=y' .config
+          grep -q '^CONFIG_PACKAGE_kmod-usb2=y' .config
+          grep -q '^CONFIG_PACKAGE_kmod-video-core=y' .config
+          grep -q '^CONFIG_PACKAGE_kmod-video-videobuf2=y' .config
+          grep -q '^CONFIG_PACKAGE_kmod-video-uvc=y' .config
+          grep -q '^CONFIG_PACKAGE_usbutils=y' .config
+          grep -q '^CONFIG_PACKAGE_v4l-utils=y' .config
+          grep -q '^CONFIG_PACKAGE_mjpg-streamer=y' .config
+          grep -q '^CONFIG_PACKAGE_motion=y' .config
+
+      - name: Download sources
+        run: |
+          cd openwrt
+          make download -j"$(nproc)"
+
+      - name: Build rootfs
+        run: |
+          cd openwrt
+          make -j"$(nproc)"
+
+      - name: Rebuild with verbose logging
+        if: failure()
+        run: |
+          cd openwrt
+          make -j1 V=s
+
+      - name: Package N1 image
+        if: ${{ inputs.package_n1_image }}
+        uses: ophub/flippy-openwrt-actions@main
+        env:
+          OPENWRT_ARMSR: openwrt/bin/targets/*/*/*rootfs.tar.gz
+          PACKAGE_SOC: s905d
+          KERNEL_VERSION_NAME: 6.6.y
+          KERNEL_AUTO_LATEST: false
+
+      - name: Upload N1 image
+        if: ${{ inputs.package_n1_image }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-n1-image
+          path: out/*.img*
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload rootfs
+        uses: actions/upload-artifact@v4
+        with:
+          name: openwrt-n1-rootfs
+          path: |
+            openwrt/bin/targets/armsr/armv8/*rootfs.tar.gz
+            openwrt/bin/targets/armsr/armv8/*.manifest
+            openwrt/.config
+          if-no-files-found: error
+          retention-days: 7

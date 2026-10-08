@@ -1,0 +1,9 @@
+openwrt/
+build/
+dl/
+out/
+*.img
+*.img.gz
+*.tar.gz
+.DS_Store
+.git-data/

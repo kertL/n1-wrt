@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ "$ACTION" = "add" ] || exit 0
+[ -n "$DEVPATH" ] || exit 0
+
+device_path="/sys${DEVPATH%:*}"
+if [ ! -r "${device_path}/idVendor" ]; then
+    device_path="/sys${DEVPATH}"
+fi
+
+[ -r "${device_path}/idVendor" ] || exit 0
+read vendor < "${device_path}/idVendor"
+
+case "$vendor" in
+    046d|46d)
+        if [ -w "${device_path}/power/control" ]; then
+            printf 'on\n' > "${device_path}/power/control"
+        fi
+        ;;
+esac
