@@ -69,17 +69,26 @@ jobs:
         run: |
           cd openwrt
           make defconfig
-          grep -q '^CONFIG_TARGET_armsr=y' .config
-          grep -q '^CONFIG_TARGET_armsr_armv8=y' .config
-          grep -q '^CONFIG_TARGET_ROOTFS_TARGZ=y' .config
-          grep -q '^CONFIG_PACKAGE_kmod-usb2=y' .config
-          grep -q '^CONFIG_PACKAGE_kmod-video-core=y' .config
-          grep -q '^CONFIG_PACKAGE_kmod-video-videobuf2=y' .config
-          grep -q '^CONFIG_PACKAGE_kmod-video-uvc=y' .config
-          grep -q '^CONFIG_PACKAGE_usbutils=y' .config
-          grep -q '^CONFIG_PACKAGE_v4l-utils=y' .config
-          grep -q '^CONFIG_PACKAGE_mjpg-streamer=y' .config
-          grep -q '^CONFIG_PACKAGE_motion=y' .config
+          required_configs=(
+            '^CONFIG_TARGET_armsr=y'
+            '^CONFIG_TARGET_armsr_armv8=y'
+            '^CONFIG_TARGET_ROOTFS_TARGZ=y'
+            '^CONFIG_PACKAGE_kmod-usb2=y'
+            '^CONFIG_PACKAGE_kmod-video-core=y'
+            '^CONFIG_PACKAGE_kmod-video-videobuf2=y'
+            '^CONFIG_PACKAGE_kmod-video-uvc=y'
+            '^CONFIG_PACKAGE_usbutils=y'
+            '^CONFIG_PACKAGE_v4l-utils=y'
+            '^CONFIG_PACKAGE_mjpg-streamer=y'
+            '^CONFIG_PACKAGE_motion=y'
+          )
+          for required_config in "${required_configs[@]}"; do
+            if ! grep -q "${required_config}" .config; then
+              echo "::error::Missing required config: ${required_config}"
+              grep -E '^(CONFIG_TARGET_armsr|CONFIG_TARGET_ROOTFS_TARGZ|CONFIG_PACKAGE_(kmod-usb2|kmod-video|usbutils|v4l-utils|mjpg-streamer|motion))' .config || true
+              exit 1
+            fi
+          done
 
       - name: Download sources
         run: |
