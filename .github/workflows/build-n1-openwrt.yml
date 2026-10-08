@@ -8,7 +8,7 @@ on:
         required: true
         default: "v24.10.6"
       openwrt_packages_ref:
-        description: "OpenWrt packages branch for motion, if needed"
+        description: "OpenWrt packages branch providing motion"
         required: true
         default: "openwrt-24.10"
       package_n1_image:
@@ -70,14 +70,13 @@ jobs:
         run: |
           cd openwrt
           ./scripts/feeds update -a
-          if [ ! -d feeds/packages/multimedia/motion ]; then
-            echo "motion recipe is unavailable in the selected feed; using openwrt/packages ${{ inputs.openwrt_packages_ref }}"
-            mkdir -p package
-            cp -a ../openwrt-packages/multimedia/motion package/motion
-          else
-            echo "motion recipe is available in the selected feed"
-          fi
           ./scripts/feeds install -a
+
+          test -f ../openwrt-packages/multimedia/motion/Makefile
+          rm -rf package/motion package/feeds/packages/motion
+          mkdir -p package
+          cp -a ../openwrt-packages/multimedia/motion package/motion
+          find package -maxdepth 4 -path '*motion*' -print
 
       - name: Apply custom files
         run: |
@@ -104,6 +103,13 @@ jobs:
           )
           for required_config in "${required_configs[@]}"; do
             if ! grep -q "${required_config}" .config; then
+              if [ "${required_config}" = '^CONFIG_PACKAGE_motion=y' ]; then
+                echo "::group::motion diagnostics"
+                grep -E '^#? CONFIG_PACKAGE_motion' .config || true
+                find package -maxdepth 5 -path '*motion*' -print
+                grep -nE '^(PKG_NAME|PKG_VERSION|DEPENDS)|BuildPackage' package/motion/Makefile || true
+                echo "::endgroup::"
+              fi
               echo "::error::Missing required config: ${required_config}"
               grep -E '^(CONFIG_TARGET_armsr|CONFIG_TARGET_ROOTFS_TARGZ|CONFIG_PACKAGE_(kmod-usb2|kmod-video|usbutils|v4l-utils|mjpg-streamer|motion))' .config || true
               exit 1
