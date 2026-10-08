@@ -61,7 +61,7 @@ v4l2-ctl -d /dev/video0 --list-formats-ext
 dmesg | grep -Ei 'uvc|video|usb'
 ```
 
-Use `mjpg-streamer` for a low-overhead live stream, or `motion` for motion detection and recording. A USB camera can normally be opened by only one process at a time.
+The image includes `mjpg-streamer` for a low-overhead live stream. Add a motion-detection package after it is available in the selected ImmortalWrt release. A USB camera can normally be opened by only one process at a time.
 
 Store recordings on a USB drive, external disk, or NAS rather than eMMC.
 

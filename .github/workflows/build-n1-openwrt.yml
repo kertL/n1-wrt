@@ -80,7 +80,6 @@ jobs:
             '^CONFIG_PACKAGE_usbutils=y'
             '^CONFIG_PACKAGE_v4l-utils=y'
             '^CONFIG_PACKAGE_mjpg-streamer=y'
-            '^CONFIG_PACKAGE_motion=y'
           )
           for required_config in "${required_configs[@]}"; do
             if ! grep -q "${required_config}" .config; then
