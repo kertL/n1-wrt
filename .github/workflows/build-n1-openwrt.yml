@@ -99,13 +99,13 @@ jobs:
             '^CONFIG_PACKAGE_usbutils=y'
             '^CONFIG_PACKAGE_v4l-utils=y'
             '^CONFIG_PACKAGE_mjpg-streamer=y'
-            '^CONFIG_PACKAGE_motion=y'
+            '^CONFIG_PACKAGE_motion-noffmpeg=y'
           )
           for required_config in "${required_configs[@]}"; do
             if ! grep -q "${required_config}" .config; then
-              if [ "${required_config}" = '^CONFIG_PACKAGE_motion=y' ]; then
+              if [ "${required_config}" = '^CONFIG_PACKAGE_motion-noffmpeg=y' ]; then
                 echo "::group::motion diagnostics"
-                grep -E '^#? CONFIG_PACKAGE_motion' .config || true
+                grep -E '^#? CONFIG_PACKAGE_motion-(noffmpeg|ffmpeg)' .config || true
                 find package -maxdepth 5 -path '*motion*' -print
                 grep -nE '^(PKG_NAME|PKG_VERSION|DEPENDS)|BuildPackage' package/motion/Makefile || true
                 echo "::endgroup::"
