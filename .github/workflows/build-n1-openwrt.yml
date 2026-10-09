@@ -31,10 +31,10 @@ jobs:
     timeout-minutes: 360
     steps:
       - name: Check out configuration
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check out ImmortalWrt source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: immortalwrt/immortalwrt
           ref: ${{ inputs.immortalwrt_ref }}
@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 1
 
       - name: Check out OpenWrt packages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: openwrt/packages
           ref: ${{ inputs.openwrt_packages_ref }}
@@ -143,7 +143,7 @@ jobs:
 
       - name: Upload N1 image
         if: ${{ inputs.package_n1_image }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: openwrt-n1-image
           path: out/*.img*
@@ -151,7 +151,7 @@ jobs:
           retention-days: 7
 
       - name: Upload rootfs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: openwrt-n1-rootfs
           path: |
