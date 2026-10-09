@@ -146,11 +146,11 @@ jobs:
           KERNEL_AUTO_LATEST: true
 
       - name: Upload N1 image
-        if: ${{ inputs.package_n1_image }}
+        if: ${{ inputs.package_n1_image && env.PACKAGED_STATUS == 'success' }}
         uses: actions/upload-artifact@v6
         with:
           name: openwrt-n1-image
-          path: out/*.img*
+          path: ${{ env.PACKAGED_OUTPUTPATH }}/*.img*
           if-no-files-found: error
           retention-days: 7
 
