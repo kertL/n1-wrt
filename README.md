@@ -66,3 +66,7 @@ The image includes `mjpg-streamer` for a low-overhead live stream and `motion-no
 Store recordings on a USB drive, external disk, or NAS rather than eMMC.
 
 The included hotplug script disables USB autosuspend for Logitech devices to reduce dropped camera streams.
+
+## Network mode
+
+The image is built as a DHCP client on the single Ethernet interface. It does not run its own IPv4 DHCP server or IPv6 RA/DHCPv6 server, and it announces itself as `n1` to the upstream router.

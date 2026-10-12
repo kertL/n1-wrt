@@ -1,0 +1,13 @@
+#!/bin/sh
+
+uci -q batch <<'EOF'
+set network.lan.proto='dhcp'
+set network.lan.hostname='n1'
+delete network.lan.ipaddr
+delete network.lan.netmask
+set dhcp.lan.ignore='1'
+set dhcp.lan.ra='disabled'
+set dhcp.lan.dhcpv6='disabled'
+commit network
+commit dhcp
+EOF
